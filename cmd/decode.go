@@ -6,22 +6,26 @@ package cmd
 
 import (
 	"fmt"
+	"net/url"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
 // decodeCmd represents the decode command
 var decodeCmd = &cobra.Command{
-	Use:   "decode",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "decode string",
+	Short: "Decode a URL.",
+	Long:  `Decode a URL encoded string.`,
+	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("decode called")
+		var input string = args[0]
+		url, err := url.PathUnescape(input)
+		if err != nil {
+			fmt.Printf("Error parsing %s\n", input)
+			os.Exit(1)
+		}
+		fmt.Printf("%s\n", url)
 	},
 }
 
