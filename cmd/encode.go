@@ -22,7 +22,10 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/net/idna"
 )
+
+var puny bool
 
 // encodeCmd represents the encode command
 var encodeCmd = &cobra.Command{
@@ -36,6 +39,15 @@ var encodeCmd = &cobra.Command{
 		if err != nil {
 			fmt.Printf("Error parsing %s\n", input)
 			os.Exit(1)
+		}
+		if puny {
+			var puny *idna.Profile = idna.New()
+			out, err := puny.ToASCII(input)
+			if err != nil {
+				fmt.Printf("Error coverting %s to punycode.", input)
+			}
+			fmt.Printf("%s\n", out)
+			return
 		}
 		fmt.Printf("%s\n", url.String())
 	},
@@ -53,4 +65,5 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// encodeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	encodeCmd.Flags().BoolVar(&puny, "puny", false, "Convert the domain/host to punycode (IDNA).")
 }
