@@ -22,6 +22,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/net/idna"
 )
 
 // decodeCmd represents the decode command
@@ -32,25 +33,25 @@ var decodeCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input string = args[0]
-		url, err := url.PathUnescape(input)
-		if err != nil {
-			fmt.Printf("Error parsing %s\n", input)
-			os.Exit(1)
+		if puny {
+			var p *idna.Profile = idna.New()
+			out, err := p.ToUnicode(input)
+			if err != nil {
+				fmt.Printf("Error converting %s.\n", input)
+				os.Exit(1)
+			}
+			fmt.Printf("%s\n", out)
+		} else {
+			decoded, err := url.PathUnescape(input)
+			if err != nil {
+				fmt.Printf("Error decoding %s.\n", input)
+				os.Exit(1)
+			}
+			fmt.Printf("%s\n", decoded)
 		}
-		fmt.Printf("%s\n", url)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(decodeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// decodeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// decodeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

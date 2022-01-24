@@ -25,8 +25,6 @@ import (
 	"golang.org/x/net/idna"
 )
 
-var puny bool
-
 // encodeCmd represents the encode command
 var encodeCmd = &cobra.Command{
 	Use:   "encode string",
@@ -35,35 +33,20 @@ var encodeCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input string = args[0]
-		url, err := url.Parse(input)
-		if err != nil {
-			fmt.Printf("Error parsing %s\n", input)
-			os.Exit(1)
-		}
 		if puny {
-			var puny *idna.Profile = idna.New()
-			out, err := puny.ToASCII(input)
+			var p *idna.Profile = idna.New()
+			out, err := p.ToASCII(input)
 			if err != nil {
-				fmt.Printf("Error coverting %s to punycode.", input)
+				fmt.Printf("Error coverting %s to punycode.\n", input)
+				os.Exit(1)
 			}
 			fmt.Printf("%s\n", out)
-			return
+		} else {
+			fmt.Printf("%s\n", url.PathEscape(input))
 		}
-		fmt.Printf("%s\n", url.String())
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(encodeCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// encodeCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// encodeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	encodeCmd.Flags().BoolVar(&puny, "puny", false, "Convert the domain/host to punycode (IDNA).")
 }

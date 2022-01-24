@@ -22,6 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var puny bool
+
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "url",
@@ -51,4 +53,5 @@ func init() {
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.PersistentFlags().BoolVar(&puny, "puny", false, "Convert the domain/host to punycode (IDNA).")
 }
