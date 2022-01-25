@@ -22,6 +22,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const schemeLabel = "scheme"
+const opaqueLabel = "opaque"
+const domainLabel = "domain"
+const portLabel = "port"
+const pathLabel = "path"
+const fragmentLabel = "fragment"
+const paramsLabel = "params"
+const paramLabel = "param"
+
 var puny bool
 var shell bool
 

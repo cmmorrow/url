@@ -28,16 +28,17 @@ import (
 	"golang.org/x/net/idna"
 )
 
-var scheme bool
-var opaque bool
-var domain bool
-var port bool
-var path bool
-var fragment bool
-var params bool
-var noColor bool
-var jsonOutput bool
-var noDecode bool
+var schemeFlag bool
+var opaqueFlag bool
+var domainFlag bool
+var portFlag bool
+var pathFlag bool
+var fragmentFlag bool
+var paramsFlag bool
+
+var noColorFlag bool
+var jsonOutputFlag bool
+var noDecodeFlag bool
 
 // parseCmd represents the parse command
 var parseCmd = &cobra.Command{
@@ -59,59 +60,59 @@ var parseCmd = &cobra.Command{
 		}
 
 		switch {
-		case scheme:
+		case schemeFlag:
 			displayComponent("", urlStruct.Scheme)
-		case opaque:
+		case opaqueFlag:
 			displayComponent("", urlStruct.Opaque)
-		case domain:
+		case domainFlag:
 			displayComponent("", hostname(urlStruct))
-		case port:
+		case portFlag:
 			displayComponent("", urlStruct.Port())
-		case path:
-			if noDecode {
+		case pathFlag:
+			if noDecodeFlag {
 				displayComponent("", urlStruct.EscapedPath())
 			} else {
 				displayComponent("", urlStruct.Path)
 			}
-		case fragment:
-			if noDecode {
+		case fragmentFlag:
+			if noDecodeFlag {
 				displayComponent("", urlStruct.EscapedFragment())
 			} else {
 				displayComponent("", urlStruct.Fragment)
 			}
-		case params:
+		case paramsFlag:
 			for key, vals := range urlStruct.Query() {
 				for i := range vals {
 					displayComponent("", key+"="+vals[i])
 				}
 			}
 		default:
-			if jsonOutput {
+			if jsonOutputFlag {
 				b := buildJSON(urlStruct)
 				fmt.Println(b)
 				return
 			}
 
-			displayComponent("scheme", urlStruct.Scheme)
-			displayComponent("opaque", urlStruct.Opaque)
-			displayComponent("domain", hostname(urlStruct))
-			displayComponent("port", urlStruct.Port())
-			if noDecode {
-				displayComponent("path", urlStruct.EscapedPath())
-				displayComponent("fragment", urlStruct.EscapedFragment())
+			displayComponent(schemeLabel, urlStruct.Scheme)
+			displayComponent(opaqueLabel, urlStruct.Opaque)
+			displayComponent(domainLabel, hostname(urlStruct))
+			displayComponent(portLabel, urlStruct.Port())
+			if noDecodeFlag {
+				displayComponent(pathLabel, urlStruct.EscapedPath())
+				displayComponent(fragmentLabel, urlStruct.EscapedFragment())
 			} else {
-				displayComponent("path", urlStruct.Path)
-				displayComponent("fragment", urlStruct.Fragment)
+				displayComponent(pathLabel, urlStruct.Path)
+				displayComponent(fragmentLabel, urlStruct.Fragment)
 			}
 
 			q := urlStruct.Query()
 			if len(q) == 0 {
-				displayComponent("param", "")
+				displayComponent(paramLabel, "")
 				return
 			}
 			for key, vals := range q {
 				for i := range vals {
-					displayComponent("param", key+"="+vals[i])
+					displayComponent(paramLabel, key+"="+vals[i])
 				}
 			}
 		}
@@ -119,49 +120,41 @@ var parseCmd = &cobra.Command{
 }
 
 func buildJSON(u *url.URL) string {
-	const scheme = "scheme"
-	const opaque = "opaque"
-	const domain = "domain"
-	const port = "port"
-	const path = "path"
-	const fragment = "fragment"
-	const params = "params"
-
 	jsonData := make(map[string]interface{})
 
-	jsonData[scheme] = u.Scheme
-	if jsonData[scheme] == "" {
-		jsonData[scheme] = nil
+	jsonData[schemeLabel] = u.Scheme
+	if jsonData[schemeLabel] == "" {
+		jsonData[schemeLabel] = nil
 	}
-	jsonData[opaque] = u.Opaque
-	if jsonData[opaque] == "" {
-		jsonData[opaque] = nil
+	jsonData[opaqueLabel] = u.Opaque
+	if jsonData[opaqueLabel] == "" {
+		jsonData[opaqueLabel] = nil
 	}
-	jsonData[domain] = hostname(u)
-	if jsonData[domain] == "" {
-		jsonData[domain] = nil
+	jsonData[domainLabel] = hostname(u)
+	if jsonData[domainLabel] == "" {
+		jsonData[domainLabel] = nil
 	}
-	jsonData[port] = u.Port()
-	if jsonData[port] == "" {
-		jsonData[port] = nil
+	jsonData[portLabel] = u.Port()
+	if jsonData[portLabel] == "" {
+		jsonData[portLabel] = nil
 	}
-	if noDecode {
-		jsonData[path] = u.EscapedPath()
-		if jsonData[path] == "" {
-			jsonData[path] = nil
+	if noDecodeFlag {
+		jsonData[pathLabel] = u.EscapedPath()
+		if jsonData[pathLabel] == "" {
+			jsonData[pathLabel] = nil
 		}
-		jsonData[fragment] = u.EscapedFragment()
-		if jsonData[fragment] == "" {
-			jsonData[fragment] = nil
+		jsonData[fragmentLabel] = u.EscapedFragment()
+		if jsonData[fragmentLabel] == "" {
+			jsonData[fragmentLabel] = nil
 		}
 	} else {
-		jsonData[path] = u.Path
-		if jsonData[path] == "" {
-			jsonData[path] = nil
+		jsonData[pathLabel] = u.Path
+		if jsonData[pathLabel] == "" {
+			jsonData[pathLabel] = nil
 		}
-		jsonData[fragment] = u.Fragment
-		if jsonData[fragment] == "" {
-			jsonData[fragment] = nil
+		jsonData[fragmentLabel] = u.Fragment
+		if jsonData[fragmentLabel] == "" {
+			jsonData[fragmentLabel] = nil
 		}
 	}
 
@@ -176,7 +169,7 @@ func buildJSON(u *url.URL) string {
 			}
 		}
 	}
-	jsonData[params] = queryParameters
+	jsonData[paramsLabel] = queryParameters
 	b, err := json.Marshal(jsonData)
 	if err != nil {
 		fmt.Println("Cannot convert to JSON.")
@@ -190,7 +183,7 @@ func displayComponent(displayName string, value string) {
 		fmt.Printf("%s\n", value)
 		return
 	}
-	if noColor {
+	if noColorFlag {
 		fmt.Printf("%s: %s\n", displayName, value)
 		return
 	}
@@ -217,14 +210,14 @@ func hostname(u *url.URL) string {
 func init() {
 	rootCmd.AddCommand(parseCmd)
 
-	parseCmd.Flags().BoolVar(&scheme, "scheme", false, "Only display the scheme.")
-	parseCmd.Flags().BoolVar(&opaque, "opaque", false, "Only display the opaque.")
-	parseCmd.Flags().BoolVar(&domain, "domain", false, "Only display the domain/host.")
-	parseCmd.Flags().BoolVar(&port, "port", false, "Only display the port number.")
-	parseCmd.Flags().BoolVar(&path, "path", false, "Only display the path.")
-	parseCmd.Flags().BoolVar(&fragment, "fragment", false, "Only display the URL fragment.")
-	parseCmd.Flags().BoolVar(&params, "params", false, "Only display the query parameters.")
-	parseCmd.Flags().BoolVar(&noColor, "no-color", false, "Suppress color text output.")
-	parseCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output as JSON.")
-	parseCmd.Flags().BoolVar(&noDecode, "no-decode", false, "Do not URL decode paths and query parameters.")
+	parseCmd.Flags().BoolVar(&schemeFlag, schemeLabel, false, "Only display the scheme.")
+	parseCmd.Flags().BoolVar(&opaqueFlag, opaqueLabel, false, "Only display the opaque.")
+	parseCmd.Flags().BoolVar(&domainFlag, domainLabel, false, "Only display the domain/host.")
+	parseCmd.Flags().BoolVar(&portFlag, portLabel, false, "Only display the port number.")
+	parseCmd.Flags().BoolVar(&pathFlag, pathLabel, false, "Only display the path.")
+	parseCmd.Flags().BoolVar(&fragmentFlag, fragmentLabel, false, "Only display the URL fragment.")
+	parseCmd.Flags().BoolVar(&paramsFlag, paramsLabel, false, "Only display the query parameters.")
+	parseCmd.Flags().BoolVar(&noColorFlag, "no-color", false, "Suppress color text output.")
+	parseCmd.Flags().BoolVar(&jsonOutputFlag, "json", false, "Output as JSON.")
+	parseCmd.Flags().BoolVar(&noDecodeFlag, "no-decode", false, "Do not URL decode paths and query parameters.")
 }
