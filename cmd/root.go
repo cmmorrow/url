@@ -23,12 +23,22 @@ import (
 )
 
 var puny bool
+var shell bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "url",
 	Short: "A command-line tool for working with URLs.",
-	Long:  `A command-line tool for working with URLs.`,
+	Long: `
+
+	_   _ ___ _      _____ ___   ___  _    
+	| | | | _ \ |    |_   _/ _ \ / _ \| |   
+	| |_| |   / |__    | || (_) | (_) | |__ 
+	 \___/|_|_\____|   |_| \___/ \___/|____|
+											
+   
+
+	A command-line tool for working with URLs.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
@@ -54,4 +64,5 @@ func init() {
 	// when this action is called directly.
 	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.PersistentFlags().BoolVar(&puny, "puny", false, "Convert the domain/host to punycode (IDNA).")
+	rootCmd.PersistentFlags().BoolVar(&shell, "shell", false, "Remove shell escape characters before processing.")
 }

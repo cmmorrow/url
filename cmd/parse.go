@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
@@ -48,7 +49,10 @@ var parseCmd = &cobra.Command{
 	Args: cobra.MatchAll(cobra.MaximumNArgs(1), cobra.MinimumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input string = args[0]
-		url, err := url.Parse(input)
+		if shell {
+			input = strings.ReplaceAll(input, "\\", "")
+		}
+		urlStruct, err := url.Parse(input)
 		if err != nil {
 			fmt.Printf("Error parsing %s\n", input)
 			os.Exit(1)
@@ -56,105 +60,51 @@ var parseCmd = &cobra.Command{
 
 		switch {
 		case scheme:
-			displayComponent("", url.Scheme)
+			displayComponent("", urlStruct.Scheme)
 		case opaque:
-			displayComponent("", url.Opaque)
+			displayComponent("", urlStruct.Opaque)
 		case domain:
-			displayComponent("", hostname(url))
+			displayComponent("", hostname(urlStruct))
 		case port:
-			displayComponent("", url.Port())
+			displayComponent("", urlStruct.Port())
 		case path:
 			if noDecode {
-				displayComponent("", url.Path)
+				displayComponent("", urlStruct.EscapedPath())
 			} else {
-				displayComponent("", url.EscapedPath())
+				displayComponent("", urlStruct.Path)
 			}
 		case fragment:
 			if noDecode {
-				displayComponent("", url.Fragment)
+				displayComponent("", urlStruct.EscapedFragment())
 			} else {
-				displayComponent("", url.EscapedFragment())
+				displayComponent("", urlStruct.Fragment)
 			}
 		case params:
-			for key, vals := range url.Query() {
+			for key, vals := range urlStruct.Query() {
 				for i := range vals {
 					displayComponent("", key+"="+vals[i])
 				}
 			}
 		default:
 			if jsonOutput {
-				jsonData := make(map[string]interface{})
-
-				jsonData["scheme"] = url.Scheme
-				if jsonData["scheme"] == "" {
-					jsonData["scheme"] = nil
-				}
-				jsonData["opaque"] = url.Opaque
-				if jsonData["opaque"] == "" {
-					jsonData["opaque"] = nil
-				}
-				jsonData["domain"] = hostname(url)
-				if jsonData["domain"] == "" {
-					jsonData["domain"] = nil
-				}
-				jsonData["port"] = url.Port()
-				if jsonData["port"] == "" {
-					jsonData["port"] = nil
-				}
-				if noDecode {
-					jsonData["path"] = url.Path
-					if jsonData["path"] == "" {
-						jsonData["path"] = nil
-					}
-					jsonData["fragment"] = url.Fragment
-					if jsonData["fragment"] == "" {
-						jsonData["fragment"] = nil
-					}
-				} else {
-					jsonData["path"] = url.EscapedPath()
-					if jsonData["path"] == "" {
-						jsonData["path"] = nil
-					}
-					jsonData["fragment"] = url.EscapedFragment()
-					if jsonData["fragment"] == "" {
-						jsonData["fragment"] = nil
-					}
-				}
-
-				q := url.Query()
-				queryParameters := make(map[string]interface{})
-				if len(q) > 0 {
-					for key, vals := range q {
-						if len(vals) > 1 {
-							queryParameters[key] = vals
-						} else {
-							queryParameters[key] = vals[0]
-						}
-					}
-				}
-				jsonData["params"] = queryParameters
-				b, err := json.Marshal(jsonData)
-				if err != nil {
-					fmt.Println("Cannot convert to JSON.")
-					os.Exit(1)
-				}
-				fmt.Println(string(b))
+				b := buildJSON(urlStruct)
+				fmt.Println(b)
 				return
 			}
 
-			displayComponent("scheme", url.Scheme)
-			displayComponent("opaque", url.Opaque)
-			displayComponent("domain", hostname(url))
-			displayComponent("port", url.Port())
+			displayComponent("scheme", urlStruct.Scheme)
+			displayComponent("opaque", urlStruct.Opaque)
+			displayComponent("domain", hostname(urlStruct))
+			displayComponent("port", urlStruct.Port())
 			if noDecode {
-				displayComponent("path", url.Path)
-				displayComponent("fragment", url.Fragment)
+				displayComponent("path", urlStruct.EscapedPath())
+				displayComponent("fragment", urlStruct.EscapedFragment())
 			} else {
-				displayComponent("path", url.EscapedPath())
-				displayComponent("fragment", url.EscapedFragment())
+				displayComponent("path", urlStruct.Path)
+				displayComponent("fragment", urlStruct.Fragment)
 			}
 
-			q := url.Query()
+			q := urlStruct.Query()
 			if len(q) == 0 {
 				displayComponent("param", "")
 				return
@@ -166,6 +116,73 @@ var parseCmd = &cobra.Command{
 			}
 		}
 	},
+}
+
+func buildJSON(u *url.URL) string {
+	const scheme = "scheme"
+	const opaque = "opaque"
+	const domain = "domain"
+	const port = "port"
+	const path = "path"
+	const fragment = "fragment"
+	const params = "params"
+
+	jsonData := make(map[string]interface{})
+
+	jsonData[scheme] = u.Scheme
+	if jsonData[scheme] == "" {
+		jsonData[scheme] = nil
+	}
+	jsonData[opaque] = u.Opaque
+	if jsonData[opaque] == "" {
+		jsonData[opaque] = nil
+	}
+	jsonData[domain] = hostname(u)
+	if jsonData[domain] == "" {
+		jsonData[domain] = nil
+	}
+	jsonData[port] = u.Port()
+	if jsonData[port] == "" {
+		jsonData[port] = nil
+	}
+	if noDecode {
+		jsonData[path] = u.EscapedPath()
+		if jsonData[path] == "" {
+			jsonData[path] = nil
+		}
+		jsonData[fragment] = u.EscapedFragment()
+		if jsonData[fragment] == "" {
+			jsonData[fragment] = nil
+		}
+	} else {
+		jsonData[path] = u.Path
+		if jsonData[path] == "" {
+			jsonData[path] = nil
+		}
+		jsonData[fragment] = u.Fragment
+		if jsonData[fragment] == "" {
+			jsonData[fragment] = nil
+		}
+	}
+
+	q := u.Query()
+	queryParameters := make(map[string]interface{})
+	if len(q) > 0 {
+		for key, vals := range q {
+			if len(vals) > 1 {
+				queryParameters[key] = vals
+			} else {
+				queryParameters[key] = vals[0]
+			}
+		}
+	}
+	jsonData[params] = queryParameters
+	b, err := json.Marshal(jsonData)
+	if err != nil {
+		fmt.Println("Cannot convert to JSON.")
+		os.Exit(1)
+	}
+	return string(b)
 }
 
 func displayComponent(displayName string, value string) {

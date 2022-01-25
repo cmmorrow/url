@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/net/idna"
@@ -33,6 +34,9 @@ var encodeCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input string = args[0]
+		if shell {
+			input = strings.ReplaceAll(input, "\\", "")
+		}
 		if puny {
 			var p *idna.Profile = idna.New()
 			out, err := p.ToASCII(input)

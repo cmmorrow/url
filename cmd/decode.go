@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/net/idna"
@@ -33,6 +34,9 @@ var decodeCmd = &cobra.Command{
 	Args:  cobra.MatchAll(cobra.MinimumNArgs(1), cobra.MaximumNArgs(1)),
 	Run: func(cmd *cobra.Command, args []string) {
 		var input string = args[0]
+		if shell {
+			input = strings.ReplaceAll(input, "\\", "")
+		}
 		if puny {
 			var p *idna.Profile = idna.New()
 			out, err := p.ToUnicode(input)
@@ -42,7 +46,7 @@ var decodeCmd = &cobra.Command{
 			}
 			fmt.Printf("%s\n", out)
 		} else {
-			decoded, err := url.PathUnescape(input)
+			decoded, err := url.QueryUnescape(input)
 			if err != nil {
 				fmt.Printf("Error decoding %s.\n", input)
 				os.Exit(1)
