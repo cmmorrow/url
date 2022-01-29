@@ -5,9 +5,9 @@ Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/url"
-	"strings"
+	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -19,57 +19,54 @@ var portInput string
 var pathInput string
 var uriPathInput string
 var fragmentInput string
+var queryInput string
 var paramsInput []string
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
 	Use:   "build",
-	Short: "A brief description of your command",
+	Short: "Build a new URI.",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
 
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Args: cobra.NoArgs,
+	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(portInput) > 0 {
-			host := strings.SplitN(domainInput, ":", 2)
-			domainInput = host[0] + ":" + portInput
-		}
-
-		values := url.Values{}
-		for i := range paramsInput {
-			params := strings.SplitN(paramsInput[i], "=", 2)
-			if len(params) != 2 {
-				params[1] = ""
+		var uri URI
+		if jsonInput != "" {
+			uri = buildURIFromJSON(jsonInput)
+		} else {
+			uri = URI{
+				Scheme:   schemeInput,
+				Opaque:   uriPathInput,
+				Domain:   domainInput,
+				Port:     portInput,
+				Path:     pathInput,
+				Fragment: fragmentInput,
+				Query:    queryInput,
+				Params:   paramsInput,
 			}
-			values[params[0]] = append(values[params[0]], params[1])
 		}
-		urlStruct := url.URL{
-			Scheme:   schemeInput,
-			Opaque:   uriPathInput,
-			Host:     domainInput,
-			Path:     pathInput,
-			RawQuery: values.Encode(),
-			Fragment: fragmentInput,
-		}
-		fmt.Printf("%s\n", urlStruct.String())
+		u := uri.asURL()
+		fmt.Printf("%s\n", u.String())
 	},
+}
+
+func buildURIFromJSON(j string) URI {
+	var uri = URI{}
+	err := json.Unmarshal([]byte(j), &uri)
+	if err != nil {
+		fmt.Println("Error reading JSON.")
+		os.Exit(1)
+	}
+	return uri
 }
 
 func init() {
 	rootCmd.AddCommand(buildCmd)
 
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// buildCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// buildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	buildCmd.Flags().StringVar(&jsonInput, "json", "", "Provide input as JSON.")
 	buildCmd.Flags().StringVar(&schemeInput, schemeLabel, "", "Provide a URI scheme (or protocol).")
 	buildCmd.Flags().StringVar(&domainInput, domainLabel, "", "Provide a URI authority/domain/host or host:port.")
@@ -77,5 +74,6 @@ func init() {
 	buildCmd.Flags().StringVar(&pathInput, pathLabel, "", "Provide a URL path.")
 	buildCmd.Flags().StringVar(&uriPathInput, "uri-path", "", "Provides URI (not URL) path.")
 	buildCmd.Flags().StringVar(&fragmentInput, fragmentLabel, "", "Provide a URI fragment.")
+	buildCmd.Flags().StringVar(&queryInput, "query", "", "Provide a URL query string (without ?).")
 	buildCmd.Flags().StringArrayVar(&paramsInput, paramLabel, nil, "Provide a key=value pair of query parameters.")
 }

@@ -17,7 +17,9 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 package cmd
 
 import (
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -33,6 +35,54 @@ const paramLabel = "param"
 
 var puny bool
 var shell bool
+
+type URI struct {
+	Scheme   string
+	Opaque   string
+	Domain   string
+	Port     string
+	Path     string
+	Fragment string
+	Query    string
+	Params   []string
+}
+
+func (u *URI) asURL() url.URL {
+	var output = url.URL{
+		Scheme:   u.Scheme,
+		Opaque:   u.Opaque,
+		Host:     u.buildHostname(),
+		Path:     u.Path,
+		Fragment: u.Fragment,
+	}
+	if u.Query != "" {
+		output.RawQuery = u.Query
+	} else {
+		output.RawQuery = u.buildValues().Encode()
+	}
+	return output
+}
+
+func (u *URI) buildHostname() string {
+	if u.Port != "" {
+		splitHost := strings.SplitN(u.Domain, ":", 2)
+		return splitHost[0] + ":" + u.Port
+	} else {
+		return u.Domain
+	}
+}
+
+func (u *URI) buildValues() url.Values {
+	values := url.Values{}
+	for i := range u.Params {
+		p := strings.SplitN(u.Params[i], "=", 2)
+		if len(p) != 2 {
+			p = append(p, "")
+		}
+		values[p[0]] = append(values[p[0]], p[1])
+	}
+	return values
+}
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
