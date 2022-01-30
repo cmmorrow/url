@@ -37,33 +37,37 @@ var puny bool
 var shell bool
 
 type URI struct {
-	Scheme   string
-	Opaque   string
-	Domain   string
-	Port     string
-	Path     string
-	Fragment string
-	Query    string
-	Params   []string
+	Scheme    string
+	Opaque    string
+	Domain    string
+	Port      string
+	Path      string
+	Fragment  string
+	Query     string
+	RawParams []string
+	Params    map[string]interface{}
 }
 
 func (u *URI) asURL() url.URL {
 	var output = url.URL{
 		Scheme:   u.Scheme,
 		Opaque:   u.Opaque,
-		Host:     u.buildHostname(),
+		Host:     u.BuildHostname(),
 		Path:     u.Path,
 		Fragment: u.Fragment,
 	}
 	if u.Query != "" {
 		output.RawQuery = u.Query
 	} else {
-		output.RawQuery = u.buildValues().Encode()
+		output.RawQuery = u.BuildValues().Encode()
 	}
 	return output
 }
 
-func (u *URI) buildHostname() string {
+func (u *URI) BuildHostname() string {
+	if u.Domain == "" {
+		return ""
+	}
 	if u.Port != "" {
 		splitHost := strings.SplitN(u.Domain, ":", 2)
 		return splitHost[0] + ":" + u.Port
@@ -72,15 +76,34 @@ func (u *URI) buildHostname() string {
 	}
 }
 
-func (u *URI) buildValues() url.Values {
+func (u *URI) BuildValues() url.Values {
 	values := url.Values{}
-	for i := range u.Params {
-		p := strings.SplitN(u.Params[i], "=", 2)
-		if len(p) != 2 {
-			p = append(p, "")
+	switch {
+	case u.Params != nil:
+
+		for key, val := range u.Params {
+			switch v := val.(type) {
+			case string:
+				values[key] = []string{v}
+			case []interface{}:
+				var vv []string
+				for i := range v {
+					vv = append(vv, v[i].(string))
+				}
+				values[key] = vv
+			}
 		}
-		values[p[0]] = append(values[p[0]], p[1])
+		return values
+	case u.RawParams != nil:
+		for i := range u.RawParams {
+			p := strings.SplitN(u.RawParams[i], "=", 2)
+			if len(p) == 1 {
+				p = append(p, "")
+			}
+			values[p[0]] = append(values[p[0]], p[1])
+		}
 	}
+
 	return values
 }
 
@@ -113,15 +136,6 @@ func Execute() {
 }
 
 func init() {
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.url.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	// rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	rootCmd.PersistentFlags().BoolVar(&puny, "puny", false, "Convert the domain/host to punycode (IDNA).")
 	rootCmd.PersistentFlags().BoolVar(&shell, "shell", false, "Remove shell escape characters before processing.")
 }

@@ -39,14 +39,14 @@ to quickly create a Cobra application.`,
 			uri = buildURIFromJSON(jsonInput)
 		} else {
 			uri = URI{
-				Scheme:   schemeInput,
-				Opaque:   uriPathInput,
-				Domain:   domainInput,
-				Port:     portInput,
-				Path:     pathInput,
-				Fragment: fragmentInput,
-				Query:    queryInput,
-				Params:   paramsInput,
+				Scheme:    schemeInput,
+				Opaque:    uriPathInput,
+				Domain:    domainInput,
+				Port:      portInput,
+				Path:      pathInput,
+				Fragment:  fragmentInput,
+				Query:     queryInput,
+				RawParams: paramsInput,
 			}
 		}
 		u := uri.asURL()
