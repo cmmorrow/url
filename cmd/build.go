@@ -1,6 +1,18 @@
 /*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
+Copyright © 2022 Chris Morrow cmmorrow@gmail.com
 
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 package cmd
 
@@ -14,6 +26,7 @@ import (
 
 var jsonInput string
 var schemeInput string
+var userInput string
 var domainInput string
 var portInput string
 var pathInput string
@@ -26,12 +39,28 @@ var paramsInput []string
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build a new URI.",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+	Long: `Build a URI or URL from its components.
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+Examples:
+
+	url build --scheme http --host myhost.com
+		http://myhost.com
+
+	url build --scheme mailto --uri-path myemail@myhost.com
+		mailto:myemail@myhost.com
+
+	url build --scheme http --host myhost.com --port 8888 --path /colorado/denver
+		http://myhost.com:8888/colorado/denver
+
+	url build --scheme http --host myhost.com --param foo=bar --param bar=baz
+		http://myhost.com?bar=baz&foo=bar
+
+	url build --scheme http --host myhost.com --query "foo=bar&bar=baz"
+		http://myhost.com?foo=bar&bar=baz
+
+	url build --json '{"scheme":"http","host":"myhost.com","params":{"foo":"bar","bar":"baz"}}'
+		http://myhost.com?bar=baz&foo=bar
+	`,
 	Args: cobra.MaximumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		var uri URI
@@ -40,8 +69,9 @@ to quickly create a Cobra application.`,
 		} else {
 			uri = URI{
 				Scheme:    schemeInput,
-				Opaque:    uriPathInput,
-				Domain:    domainInput,
+				User:      userInput,
+				UriPath:   uriPathInput,
+				Host:      domainInput,
 				Port:      portInput,
 				Path:      pathInput,
 				Fragment:  fragmentInput,
@@ -69,7 +99,8 @@ func init() {
 
 	buildCmd.Flags().StringVar(&jsonInput, "json", "", "Provide input as JSON.")
 	buildCmd.Flags().StringVar(&schemeInput, schemeLabel, "", "Provide a URI scheme (or protocol).")
-	buildCmd.Flags().StringVar(&domainInput, domainLabel, "", "Provide a URI authority/domain/host or host:port.")
+	buildCmd.Flags().StringVar(&userInput, userLabel, "", "Provides a user[:password].")
+	buildCmd.Flags().StringVar(&domainInput, hostLabel, "", "Provide a URI authority/domain/host or host:port.")
 	buildCmd.Flags().StringVar(&portInput, portLabel, "", "Provide a port number.")
 	buildCmd.Flags().StringVar(&pathInput, pathLabel, "", "Provide a URL path.")
 	buildCmd.Flags().StringVar(&uriPathInput, "uri-path", "", "Provides URI (not URL) path.")

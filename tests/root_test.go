@@ -12,13 +12,13 @@ type uriTest struct {
 }
 
 var buildHostnameTests = []uriTest{
-	{cmd.URI{Domain: "myhost.com"}, "myhost.com"},
-	{cmd.URI{Domain: "myhost.com", Port: ""}, "myhost.com"},
-	{cmd.URI{Domain: "myhost.com", Port: "5000"}, "myhost.com:5000"},
-	{cmd.URI{Domain: "myhost.com:5000"}, "myhost.com:5000"},
-	{cmd.URI{Domain: "myhost.com:8000", Port: "5000"}, "myhost.com:5000"},
+	{cmd.URI{Host: "myhost.com"}, "myhost.com"},
+	{cmd.URI{Host: "myhost.com", Port: ""}, "myhost.com"},
+	{cmd.URI{Host: "myhost.com", Port: "5000"}, "myhost.com:5000"},
+	{cmd.URI{Host: "myhost.com:5000"}, "myhost.com:5000"},
+	{cmd.URI{Host: "myhost.com:8000", Port: "5000"}, "myhost.com:5000"},
 	{cmd.URI{Port: "5000"}, ""},
-	{cmd.URI{Domain: "myhost.com:5000:8000"}, "myhost.com:5000:8000"},
+	{cmd.URI{Host: "myhost.com:5000:8000"}, "myhost.com:5000:8000"},
 }
 
 func TestBuildHostname(t *testing.T) {
@@ -74,13 +74,33 @@ func TestBuildValuesEmpty(t *testing.T) {
 	}
 }
 
+var setUserTests = []uriTest{
+	{cmd.URI{User: "wanda"}, "wanda"},
+	{cmd.URI{User: "wanda:1234"}, "wanda:1234"},
+	{cmd.URI{User: ""}, ""},
+	{cmd.URI{User: "wanda:1234:blah"}, "wanda:1234"},
+}
+
+func TestSetUser(t *testing.T) {
+	for _, test := range setUserTests {
+		out := test.uri.SetUser().String()
+		if out != test.expected {
+			t.Fatalf("Expected '%s', got %s", test.expected, out)
+		}
+
+	}
+}
+
 var urlTests = []uriTest{
-	{cmd.URI{Scheme: "http", Domain: "test.com"}, "http://test.com"},
-	{cmd.URI{Scheme: "https", Domain: "test.com:8888"}, "https://test.com:8888"},
-	{cmd.URI{Scheme: "https", Domain: "test.com", Port: "8888"}, "https://test.com:8888"},
-	{cmd.URI{Scheme: "https", Domain: "test.com", Query: "foo=bar&bar=baz"}, "https://test.com?foo=bar&bar=baz"},
-	{cmd.URI{Scheme: "https", Domain: "test.com", RawParams: []string{"foo=bar", "bar=baz"}}, "https://test.com?bar=baz&foo=bar"},
-	{cmd.URI{Scheme: "https", Domain: "test.com", Params: map[string]interface{}{"foo": "bar", "bar": "baz"}}, "https://test.com?bar=baz&foo=bar"},
+	{cmd.URI{Scheme: "http", Host: "test.com"}, "http://test.com"},
+	{cmd.URI{Scheme: "https", Host: "test.com:8888"}, "https://test.com:8888"},
+	{cmd.URI{Scheme: "https", Host: "test.com", Port: "8888"}, "https://test.com:8888"},
+	{cmd.URI{Scheme: "https", Host: "test.com", Query: "foo=bar&bar=baz"}, "https://test.com?foo=bar&bar=baz"},
+	{cmd.URI{Scheme: "https", Host: "test.com", RawParams: []string{"foo=bar", "bar=baz"}}, "https://test.com?bar=baz&foo=bar"},
+	{cmd.URI{Scheme: "https", Host: "test.com", Params: map[string]interface{}{"foo": "bar", "bar": "baz"}}, "https://test.com?bar=baz&foo=bar"},
+	{cmd.URI{Scheme: "mailto", UriPath: "nobody@email.com"}, "mailto:nobody@email.com"},
+	{cmd.URI{Scheme: "http", User: "wanda", Host: "test.com"}, "http://wanda@test.com"},
+	{cmd.URI{Scheme: "http", User: "wanda:1234", Host: "test.com"}, "http://wanda:1234@test.com"},
 }
 
 func TestAsURL(t *testing.T) {

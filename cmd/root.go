@@ -25,8 +25,9 @@ import (
 )
 
 const schemeLabel = "scheme"
-const opaqueLabel = "opaque"
-const domainLabel = "domain"
+const opaqueLabel = "uri-path"
+const userLabel = "user"
+const hostLabel = "host"
 const portLabel = "port"
 const pathLabel = "path"
 const fragmentLabel = "fragment"
@@ -38,8 +39,9 @@ var shell bool
 
 type URI struct {
 	Scheme    string
-	Opaque    string
-	Domain    string
+	UriPath   string
+	User      string
+	Host      string
 	Port      string
 	Path      string
 	Fragment  string
@@ -51,10 +53,13 @@ type URI struct {
 func (u *URI) AsURL() url.URL {
 	var output = url.URL{
 		Scheme:   u.Scheme,
-		Opaque:   u.Opaque,
+		Opaque:   u.UriPath,
 		Host:     u.BuildHostname(),
 		Path:     u.Path,
 		Fragment: u.Fragment,
+	}
+	if u.User != "" {
+		output.User = u.SetUser()
 	}
 	if u.Query != "" {
 		output.RawQuery = u.Query
@@ -64,15 +69,31 @@ func (u *URI) AsURL() url.URL {
 	return output
 }
 
+func (u *URI) SetUser() *url.Userinfo {
+	var username, password string
+	if u.User != "" {
+		user := strings.Split(u.User, ":")
+		if len(user) == 1 {
+			user = append(user, "")
+		}
+		username, password = user[0], user[1]
+	}
+	if password != "" {
+		return url.UserPassword(username, password)
+	} else {
+		return url.User(username)
+	}
+}
+
 func (u *URI) BuildHostname() string {
-	if u.Domain == "" {
+	if u.Host == "" {
 		return ""
 	}
 	if u.Port != "" {
-		splitHost := strings.SplitN(u.Domain, ":", 2)
+		splitHost := strings.SplitN(u.Host, ":", 2)
 		return splitHost[0] + ":" + u.Port
 	} else {
-		return u.Domain
+		return u.Host
 	}
 }
 
@@ -121,13 +142,8 @@ var rootCmd = &cobra.Command{
    
 
 	A command-line tool for working with URLs.`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
-// Execute adds all child commands to the root command and sets flags appropriately.
-// This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
