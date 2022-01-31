@@ -49,7 +49,7 @@ to quickly create a Cobra application.`,
 				RawParams: paramsInput,
 			}
 		}
-		u := uri.asURL()
+		u := uri.AsURL()
 		fmt.Printf("%s\n", u.String())
 	},
 }

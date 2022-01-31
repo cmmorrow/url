@@ -53,7 +53,7 @@ var parseCmd = &cobra.Command{
 		if shell {
 			input = strings.ReplaceAll(input, "\\", "")
 		}
-		urlStruct, err := url.Parse(input)
+		u, err := url.Parse(input)
 		if err != nil {
 			fmt.Printf("Error parsing %s\n", input)
 			os.Exit(1)
@@ -61,51 +61,51 @@ var parseCmd = &cobra.Command{
 
 		switch {
 		case schemeFlag:
-			displayComponent("", urlStruct.Scheme)
+			displayComponent("", u.Scheme)
 		case opaqueFlag:
-			displayComponent("", urlStruct.Opaque)
+			displayComponent("", u.Opaque)
 		case domainFlag:
-			displayComponent("", hostname(urlStruct))
+			displayComponent("", hostname(u))
 		case portFlag:
-			displayComponent("", urlStruct.Port())
+			displayComponent("", u.Port())
 		case pathFlag:
 			if noDecodeFlag {
-				displayComponent("", urlStruct.EscapedPath())
+				displayComponent("", u.EscapedPath())
 			} else {
-				displayComponent("", urlStruct.Path)
+				displayComponent("", u.Path)
 			}
 		case fragmentFlag:
 			if noDecodeFlag {
-				displayComponent("", urlStruct.EscapedFragment())
+				displayComponent("", u.EscapedFragment())
 			} else {
-				displayComponent("", urlStruct.Fragment)
+				displayComponent("", u.Fragment)
 			}
 		case paramsFlag:
-			for key, vals := range urlStruct.Query() {
+			for key, vals := range u.Query() {
 				for i := range vals {
 					displayComponent("", key+"="+vals[i])
 				}
 			}
 		default:
 			if jsonOutputFlag {
-				b := buildJSON(urlStruct)
+				b := buildJSON(u)
 				fmt.Println(b)
 				return
 			}
 
-			displayComponent(schemeLabel, urlStruct.Scheme)
-			displayComponent(opaqueLabel, urlStruct.Opaque)
-			displayComponent(domainLabel, hostname(urlStruct))
-			displayComponent(portLabel, urlStruct.Port())
+			displayComponent(schemeLabel, u.Scheme)
+			displayComponent(opaqueLabel, u.Opaque)
+			displayComponent(domainLabel, hostname(u))
+			displayComponent(portLabel, u.Port())
 			if noDecodeFlag {
-				displayComponent(pathLabel, urlStruct.EscapedPath())
-				displayComponent(fragmentLabel, urlStruct.EscapedFragment())
+				displayComponent(pathLabel, u.EscapedPath())
+				displayComponent(fragmentLabel, u.EscapedFragment())
 			} else {
-				displayComponent(pathLabel, urlStruct.Path)
-				displayComponent(fragmentLabel, urlStruct.Fragment)
+				displayComponent(pathLabel, u.Path)
+				displayComponent(fragmentLabel, u.Fragment)
 			}
 
-			q := urlStruct.Query()
+			q := u.Query()
 			if len(q) == 0 {
 				displayComponent(paramLabel, "")
 				return

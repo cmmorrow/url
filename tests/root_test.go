@@ -11,7 +11,7 @@ type uriTest struct {
 	expected string
 }
 
-var hostnameTests = []uriTest{
+var buildHostnameTests = []uriTest{
 	{cmd.URI{Domain: "myhost.com"}, "myhost.com"},
 	{cmd.URI{Domain: "myhost.com", Port: ""}, "myhost.com"},
 	{cmd.URI{Domain: "myhost.com", Port: "5000"}, "myhost.com:5000"},
@@ -22,7 +22,7 @@ var hostnameTests = []uriTest{
 }
 
 func TestBuildHostname(t *testing.T) {
-	for _, test := range hostnameTests {
+	for _, test := range buildHostnameTests {
 		out := test.uri.BuildHostname()
 		if out != test.expected {
 			t.Fatalf("Expected '%s', got %s", test.expected, out)
@@ -63,5 +63,32 @@ func TestBuildValues(t *testing.T) {
 			t.Fatalf("Expected '%s', got %s", test.expected, out)
 		}
 
+	}
+}
+
+func TestBuildValuesEmpty(t *testing.T) {
+	uri := cmd.URI{}
+	out := uri.BuildValues()
+	if len(out) != 0 {
+		t.Fatalf("Expected []map, got %v", out)
+	}
+}
+
+var urlTests = []uriTest{
+	{cmd.URI{Scheme: "http", Domain: "test.com"}, "http://test.com"},
+	{cmd.URI{Scheme: "https", Domain: "test.com:8888"}, "https://test.com:8888"},
+	{cmd.URI{Scheme: "https", Domain: "test.com", Port: "8888"}, "https://test.com:8888"},
+	{cmd.URI{Scheme: "https", Domain: "test.com", Query: "foo=bar&bar=baz"}, "https://test.com?foo=bar&bar=baz"},
+	{cmd.URI{Scheme: "https", Domain: "test.com", RawParams: []string{"foo=bar", "bar=baz"}}, "https://test.com?bar=baz&foo=bar"},
+	{cmd.URI{Scheme: "https", Domain: "test.com", Params: map[string]interface{}{"foo": "bar", "bar": "baz"}}, "https://test.com?bar=baz&foo=bar"},
+}
+
+func TestAsURL(t *testing.T) {
+	for _, test := range urlTests {
+		u := test.uri.AsURL()
+		out := u.String()
+		if out != test.expected {
+			t.Fatalf("Expected '%s', got %s", test.expected, out)
+		}
 	}
 }

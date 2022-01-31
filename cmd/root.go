@@ -48,7 +48,7 @@ type URI struct {
 	Params    map[string]interface{}
 }
 
-func (u *URI) asURL() url.URL {
+func (u *URI) AsURL() url.URL {
 	var output = url.URL{
 		Scheme:   u.Scheme,
 		Opaque:   u.Opaque,
